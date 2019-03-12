@@ -1,120 +1,69 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
-	"os/signal"
 	"time"
-
-	"github.com/gorilla/mux"
 )
 
-const (
-	BaseURL = "https://ghibliapi.herokuapp.com"
-)
+const apiUrl = "https://www.metaweather.com/api/location/"
 
-var (
-	wait time.Duration
-)
-
-type Movie struct {
-	ID           string `json: "id"`
-	Title        string `json: "title"`
-	Description  string `json: "description"`
-	Director     string `json: "director"`
-	Release_Date string `json: "release_date"`
+type WeatherData struct {
+	ConsolidatedWeather []struct {
+		ID               int64   `json:"id"`
+		WeatherStateName string  `json:"weather_state_name"`
+		MinTemp          float64 `json:"min_temp"`
+		MaxTemp          float64 `json:"max_temp"`
+		WindDirection    float64 `json:"wind_direction"`
+		Humidity         int     `json:"humidity"`
+		Predictability   int     `json:"predictability"`
+	} `json:"consolidated_weather"`
+	Title        string `json:"title"`
+	LocationType string `json:"location_type"`
+	Woeid        int    `json:"woeid"`
+	LattLong     string `json:"latt_long"`
 }
 
-func rootHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "pong\n")
+var woeid = map[string]string{
+	"london":    "44418",
+	"stockholm": "906057",
 }
 
-func movies(w http.ResponseWriter, r *http.Request) {
-	resp, err := http.Get(BaseURL + "/films")
+func helloHandler(w http.ResponseWriter, r *http.Request) {
+	resp, err := http.Get(apiUrl + woeid["london"])
 	if err != nil {
-		http.Error(w, "Server error", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	defer resp.Body.Close()
-
-	var mov []Movie
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		http.Error(w, "server error", http.StatusInternalServerError)
-		return
-	}
-
-	err = json.Unmarshal(body, &mov)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	apa, _ := json.Marshal(mov)
-
-	fmt.Fprintln(w, string(apa))
-}
-
-func movie(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
-
-	resp, err := http.Get(BaseURL + "/films/" + id)
-	if err != nil {
-		http.Error(w, "server error", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
 
-	var mov Movie
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		http.Error(w, "server error", http.StatusInternalServerError)
+	var data WeatherData
+	if err := json.Unmarshal(body, &data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = json.Unmarshal(body, &mov)
-
-	apa, _ := json.Marshal(mov)
-
-	fmt.Fprintln(w, string(apa))
-
+	fmt.Fprintln(w, data)
 }
 
 func main() {
-	wait = time.Second * 5
-
-	router := mux.NewRouter()
-	router.HandleFunc("/", rootHandler).Methods("GET")
-	router.HandleFunc("/movies", movies).Methods("GET")
-	router.HandleFunc("/movie/{id}", movie).Methods("GET")
+	router := http.NewServeMux()
+	router.HandleFunc("/hello", helloHandler)
 
 	srv := &http.Server{
-		Addr:         "0.0.0.0:4000",
-		WriteTimeout: wait,
-		ReadTimeout:  wait,
+		Addr:         "0.0.0.0:5000",
+		WriteTimeout: time.Second * 5,
+		ReadTimeout:  time.Second * 5,
 		Handler:      router,
 	}
-
-	go func() {
-		if err := srv.ListenAndServe(); err != nil {
-			log.Println(err)
-		}
-	}()
-
-	// graceful shutdown at SIGINT
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	<-c
-	ctx, cancel := context.WithTimeout(context.Background(), wait)
-	defer cancel()
-	srv.Shutdown(ctx)
-
-	log.Println("Shutting down server...")
-	os.Exit(0)
+	log.Fatal(srv.ListenAndServe())
 }
