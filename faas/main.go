@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -11,13 +10,11 @@ import (
 
 const apiUrl = "https://www.metaweather.com/api/location/"
 
-type WeatherData struct {
+type rawWeatherData struct {
 	ConsolidatedWeather []struct {
-		ID               int64   `json:"id"`
 		WeatherStateName string  `json:"weather_state_name"`
 		MinTemp          float64 `json:"min_temp"`
 		MaxTemp          float64 `json:"max_temp"`
-		WindDirection    float64 `json:"wind_direction"`
 		Humidity         int     `json:"humidity"`
 		Predictability   int     `json:"predictability"`
 	} `json:"consolidated_weather"`
@@ -27,13 +24,47 @@ type WeatherData struct {
 	LattLong     string `json:"latt_long"`
 }
 
+type WeatherData struct {
+	WeatherStateName string  `json:"weather_state_name"`
+	MinTemp          float64 `json:"min_temp"`
+	MaxTemp          float64 `json:"max_temp"`
+	Title            string  `json:"title"`
+	LattLong         string  `json:"latt_long"`
+}
+
 var woeid = map[string]string{
 	"london":    "44418",
 	"stockholm": "906057",
 }
 
+func returnHighestPredictability(data *rawWeatherData) ([]uint8, error) {
+	highestPredictability := 0
+	var predictabilityIndex int
+
+	for i, p := range data.ConsolidatedWeather {
+		if p.Predictability > highestPredictability {
+			highestPredictability = p.Predictability
+			predictabilityIndex = i
+		}
+	}
+
+	cleanedData := &WeatherData{
+		WeatherStateName: data.ConsolidatedWeather[predictabilityIndex].WeatherStateName,
+		MinTemp:          data.ConsolidatedWeather[predictabilityIndex].MinTemp,
+		MaxTemp:          data.ConsolidatedWeather[predictabilityIndex].MaxTemp,
+		Title:            data.Title,
+		LattLong:         data.LattLong,
+	}
+
+	weather, err := json.Marshal(cleanedData)
+	if err != nil {
+		return nil, err
+	}
+	return weather, nil
+}
+
 func helloHandler(w http.ResponseWriter, r *http.Request) {
-	resp, err := http.Get(apiUrl + woeid["london"])
+	resp, err := http.Get(apiUrl + woeid["stockholm"])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -46,13 +77,20 @@ func helloHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	var data WeatherData
+	var data rawWeatherData
 	if err := json.Unmarshal(body, &data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	fmt.Fprintln(w, data)
+	weather, err := returnHighestPredictability(&data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(weather)
 }
 
 func main() {
