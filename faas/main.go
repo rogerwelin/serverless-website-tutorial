@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -60,6 +61,8 @@ func returnHighestPredictability(data *rawWeatherData) (*WeatherData, error) {
 }
 
 func HandleRequest(ctx context.Context, req Event) (WeatherData, error) {
+
+	fmt.Println("Requestig woeid: " + req.WoeID)
 
 	var weather *WeatherData
 
