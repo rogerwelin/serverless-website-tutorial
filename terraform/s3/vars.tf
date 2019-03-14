@@ -1,7 +1,11 @@
 variable "region" {
-  default = "us-east-1"
+  default = "eu-north-1"
 }
 
-variable "bucket_name" {
+variable "website_bucket" {
   default = "my-serverless-website"
+}
+
+variable "artifact_bucket" {
+  default = "my-artifact-bucket"
 }
