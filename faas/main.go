@@ -1,14 +1,19 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
-	"time"
+
+	"github.com/aws/aws-lambda-go/lambda"
 )
 
 const apiUrl = "https://www.metaweather.com/api/location/"
+
+type Event struct {
+	WoeID string `json:"woeid"`
+}
 
 type rawWeatherData struct {
 	ConsolidatedWeather []struct {
@@ -32,12 +37,7 @@ type WeatherData struct {
 	LattLong         string  `json:"latt_long"`
 }
 
-var woeid = map[string]string{
-	"london":    "44418",
-	"stockholm": "906057",
-}
-
-func returnHighestPredictability(data *rawWeatherData) ([]uint8, error) {
+func returnHighestPredictability(data *rawWeatherData) (*WeatherData, error) {
 	highestPredictability := 0
 	var predictabilityIndex int
 
@@ -56,52 +56,37 @@ func returnHighestPredictability(data *rawWeatherData) ([]uint8, error) {
 		LattLong:         data.LattLong,
 	}
 
-	weather, err := json.Marshal(cleanedData)
-	if err != nil {
-		return nil, err
-	}
-	return weather, nil
+	return cleanedData, nil
 }
 
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-	resp, err := http.Get(apiUrl + woeid["stockholm"])
+func HandleRequest(ctx context.Context, req Event) (WeatherData, error) {
+
+	var weather *WeatherData
+
+	resp, err := http.Get(apiUrl + req.WoeID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return *weather, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return *weather, err
 	}
 	defer resp.Body.Close()
 
 	var data rawWeatherData
 	if err := json.Unmarshal(body, &data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return *weather, err
 	}
 
-	weather, err := returnHighestPredictability(&data)
+	weather, err = returnHighestPredictability(&data)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return *weather, err
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(weather)
+	return *weather, nil
 }
 
 func main() {
-	router := http.NewServeMux()
-	router.HandleFunc("/hello", helloHandler)
-
-	srv := &http.Server{
-		Addr:         "0.0.0.0:5000",
-		WriteTimeout: time.Second * 5,
-		ReadTimeout:  time.Second * 5,
-		Handler:      router,
-	}
-	log.Fatal(srv.ListenAndServe())
+	lambda.Start(HandleRequest)
 }
