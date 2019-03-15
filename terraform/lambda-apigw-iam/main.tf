@@ -64,7 +64,7 @@ resource "aws_lambda_function" "weather_api" {
   s3_bucket = "${var.artifact_bucket}"
   s3_key    = "faas.zip"
 
-  handler = "weatherapi"
+  handler = "faas"
   runtime = "go1.x"
 
   role = "${aws_iam_role.lambda_role.arn}"
@@ -72,11 +72,11 @@ resource "aws_lambda_function" "weather_api" {
 
 resource "aws_lambda_permission" "apigw" {
   statement_id  = "AllowAPIGatewayInvoke"
-  action        = "lambda:InokeFunction"
+  action        = "lambda:InvokeFunction"
   function_name = "${aws_lambda_function.weather_api.arn}"
   principal     = "apigateway.amazonaws.com"
 
-  source_arn = "${aws_api_gateway_deployment.gw_deploy.execution_arn}/*/*"
+  source_arn = "${aws_api_gateway_rest_api.weather_gw.execution_arn}/*/*"
 }
 
 ############################################
@@ -91,7 +91,7 @@ resource "aws_api_gateway_rest_api" "weather_gw" {
 resource "aws_api_gateway_resource" "proxy" {
   rest_api_id = "${aws_api_gateway_rest_api.weather_gw.id}"
   parent_id   = "${aws_api_gateway_rest_api.weather_gw.root_resource_id}"
-  path_part   = "{proxy+}"
+  path_part   = "hello"
 }
 
 resource "aws_api_gateway_method" "proxy" {
@@ -99,6 +99,13 @@ resource "aws_api_gateway_method" "proxy" {
   resource_id   = "${aws_api_gateway_resource.proxy.id}"
   http_method   = "ANY"
   authorization = "NONE"
+}
+
+resource "aws_api_gateway_method_response" "200" {
+  rest_api_id = "${aws_api_gateway_rest_api.weather_gw.id}"
+  resource_id = "${aws_api_gateway_resource.proxy.id}"
+  http_method = "${aws_api_gateway_method.proxy.http_method}"
+  status_code = "200"
 }
 
 resource "aws_api_gateway_integration" "lambda" {
@@ -111,27 +118,9 @@ resource "aws_api_gateway_integration" "lambda" {
   uri                     = "${aws_lambda_function.weather_api.invoke_arn}"
 }
 
-resource "aws_api_gateway_method" "proxy_root" {
-  rest_api_id   = "${aws_api_gateway_rest_api.weather_gw.id}"
-  resource_id   = "${aws_api_gateway_rest_api.weather_gw.root_resource_id}"
-  http_method   = "ANY"
-  authorization = "NONE"
-}
-
-resource "aws_api_gateway_integration" "lambda_root" {
-  rest_api_id = "${aws_api_gateway_rest_api.weather_gw.id}"
-  resource_id = "${aws_api_gateway_method.proxy_root.resource_id}"
-  http_method = "${aws_api_gateway_method.proxy_root.http_method}"
-
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = "${aws_lambda_function.weather_api.invoke_arn}"
-}
-
 resource "aws_api_gateway_deployment" "gw_deploy" {
   depends_on = [
     "aws_api_gateway_integration.lambda",
-    "aws_api_gateway_integration.lambda_root",
   ]
 
   rest_api_id = "${aws_api_gateway_rest_api.weather_gw.id}"

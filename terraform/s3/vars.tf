@@ -1,11 +1,11 @@
 variable "region" {
-  default = "eu-north-1"
+  default = "us-east-1"
 }
 
 variable "website_bucket" {
-  default = "my-serverless-website"
+  default = "weather-api-website1"
 }
 
 variable "artifact_bucket" {
-  default = "my-artifact-bucket"
+  default = "12345-artifact-bucket"
 }

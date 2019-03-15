@@ -1,12 +1,12 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 )
 
@@ -60,34 +60,45 @@ func returnHighestPredictability(data *rawWeatherData) (*WeatherData, error) {
 	return cleanedData, nil
 }
 
-func HandleRequest(ctx context.Context, req Event) (WeatherData, error) {
-
-	fmt.Println("Requestig woeid: " + req.WoeID)
-
+func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	var weather *WeatherData
+	var event Event
 
-	resp, err := http.Get(apiUrl + req.WoeID)
+	fmt.Println("Request body: " + req.Body)
+
+	err := json.Unmarshal([]byte(req.Body), &event)
 	if err != nil {
-		return *weather, err
+		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
+	}
+
+	resp, err := http.Get(apiUrl + event.WoeID)
+	if err != nil {
+		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
+
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return *weather, err
+		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 	}
 	defer resp.Body.Close()
 
 	var data rawWeatherData
 	if err := json.Unmarshal(body, &data); err != nil {
-		return *weather, err
+		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 	}
 
 	weather, err = returnHighestPredictability(&data)
 	if err != nil {
-		return *weather, err
+		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 	}
 
-	return *weather, nil
+	re, err := json.Marshal(*weather)
+	if err != nil {
+		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
+	}
+
+	return events.APIGatewayProxyResponse{Body: string(re), StatusCode: 200}, nil
 }
 
 func main() {
