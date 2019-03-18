@@ -62,9 +62,9 @@ resource "aws_lambda_function" "weather_api" {
 
   # fetch the artifact from bucket created earlier
   s3_bucket = "${var.artifact_bucket}"
-  s3_key    = "faas.zip"
+  s3_key    = "${var.artifact_zip_name}"
 
-  handler = "faas"
+  handler = "${var.faas_name}"
   runtime = "go1.x"
 
   role = "${aws_iam_role.lambda_role.arn}"
