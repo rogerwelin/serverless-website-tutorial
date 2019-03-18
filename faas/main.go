@@ -71,7 +71,6 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 
 	err := json.Unmarshal([]byte(req.Body), &event)
 	if err != nil {
-		//return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 		resp.StatusCode = 500
 		resp.Body = err.Error()
 		return resp, nil
@@ -79,7 +78,6 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 
 	response, err := http.Get(apiUrl + event.WoeID)
 	if err != nil {
-		//return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 		resp.StatusCode = 500
 		resp.Body = err.Error()
 		return resp, nil
@@ -88,7 +86,6 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		//return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 		resp.StatusCode = 500
 		resp.Body = err.Error()
 		return resp, nil
@@ -97,7 +94,6 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 
 	var data rawWeatherData
 	if err := json.Unmarshal(body, &data); err != nil {
-		//return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 		resp.StatusCode = 500
 		resp.Body = err.Error()
 		return resp, nil
@@ -105,7 +101,6 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 
 	weather, err = returnHighestPredictability(&data)
 	if err != nil {
-		//return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 		resp.StatusCode = 500
 		resp.Body = err.Error()
 		return resp, nil
@@ -113,13 +108,11 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 
 	re, err := json.Marshal(*weather)
 	if err != nil {
-		//return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 		resp.StatusCode = 500
 		resp.Body = err.Error()
 		return resp, nil
 	}
 
-	//return events.APIGatewayProxyResponse{Body: string(re), StatusCode: 200}, nil
 	resp.StatusCode = 200
 	resp.Body = string(re)
 	return resp, nil
