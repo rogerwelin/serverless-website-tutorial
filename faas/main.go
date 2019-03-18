@@ -64,41 +64,65 @@ func HandleRequest(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 	var weather *WeatherData
 	var event Event
 
+	resp := events.APIGatewayProxyResponse{Headers: make(map[string]string)}
+	resp.Headers["Access-Control-Allow-Origin"] = "*"
+
 	fmt.Println("Request body: " + req.Body)
 
 	err := json.Unmarshal([]byte(req.Body), &event)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
+		//return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
+		resp.StatusCode = 500
+		resp.Body = err.Error()
+		return resp, nil
 	}
 
-	resp, err := http.Get(apiUrl + event.WoeID)
+	response, err := http.Get(apiUrl + event.WoeID)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
+		//return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
+		resp.StatusCode = 500
+		resp.Body = err.Error()
+		return resp, nil
 
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
+		//return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
+		resp.StatusCode = 500
+		resp.Body = err.Error()
+		return resp, nil
 	}
-	defer resp.Body.Close()
+	defer response.Body.Close()
 
 	var data rawWeatherData
 	if err := json.Unmarshal(body, &data); err != nil {
-		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
+		//return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
+		resp.StatusCode = 500
+		resp.Body = err.Error()
+		return resp, nil
 	}
 
 	weather, err = returnHighestPredictability(&data)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
+		//return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
+		resp.StatusCode = 500
+		resp.Body = err.Error()
+		return resp, nil
 	}
 
 	re, err := json.Marshal(*weather)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
+		//return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
+		resp.StatusCode = 500
+		resp.Body = err.Error()
+		return resp, nil
 	}
 
-	return events.APIGatewayProxyResponse{Body: string(re), StatusCode: 200}, nil
+	//return events.APIGatewayProxyResponse{Body: string(re), StatusCode: 200}, nil
+	resp.StatusCode = 200
+	resp.Body = string(re)
+	return resp, nil
 }
 
 func main() {

@@ -1,0 +1,53 @@
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script type="text/javascript">
+function submitToAPI(e) {
+       e.preventDefault();
+       var name = $("#apa").val();
+
+var data = {
+	woeid: name
+};
+
+$.ajax({
+  type: "POST",
+  url: "https://wz1mqavng4.execute-api.us-east-1.amazonaws.com/stage/hello",
+  crossDomain: "true",
+  dataType: "json",
+  contentType: "application/json",
+  data: JSON.stringify(data),
+  success: function(response) { 
+    $("#weather").text(response.weather_state_name);
+    $("#min-temp").text(response.min_temp);
+    $("#max-temp").text(response.max_temp);
+    $("#city").text(response.title);
+  }
+});
+
+}
+</script>
+</head>
+
+<body>
+<form id="contact-form" method="post">
+  <select id="apa">
+  <option value="906057">Stockholm</option>
+  <option value="44418">London</option>
+  <option value="638242">Berlin</option>
+  <option value="615702">Paris</option>
+  <option value="721943">Rome</option>
+  <option value="727232">Amsterdam</option>
+  <option value="766273">Madrid</option>
+</select>
+<br />
+<button type="button" onClick="submitToAPI(event)" class="btn btn-lg" style="margin-top:20px;">Submit</button>
+</form>
+
+<p id="weather"></p>
+<p id="min-temp"></p>
+<p id="max-temp"></p>
+<p id="city"></p>
+
+</body>
+</html>
