@@ -1,53 +1,83 @@
 <html>
 <head>
+  <meta charset="UTF-8">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<style>
+body {
+  padding-top: 30px;
+  padding-left: 60px;
+}
+</style>
 <script type="text/javascript">
 function submitToAPI(e) {
-       e.preventDefault();
-       var name = $("#apa").val();
+  e.preventDefault();
+  var name = $("#apa").val();
 
 var data = {
-	woeid: name
+  woeid: name
 };
 
 $.ajax({
   type: "POST",
-  url: "http://your-api-gw-url",
+  url: "http://YOUR-API-GW-URL",
   crossDomain: "true",
   dataType: "json",
   contentType: "application/json",
   data: JSON.stringify(data),
   success: function(response) { 
-    $("#weather").text(response.weather_state_name);
-    $("#min-temp").text(response.min_temp);
-    $("#max-temp").text(response.max_temp);
-    $("#city").text(response.title);
+    $("#weather").html("<b>Forecast: </b>" + response.weather_state_name);
+    $("#min-temp").html("<b>Min temp: </b>" + response.min_temp.toFixed(1) + " °C");
+    $("#max-temp").html("<b>Max temp:  </b>" + response.max_temp.toFixed(1) + " °C");
+    $("#city").html("<b>City: </b>" + response.title);
   }
 });
-
 }
 </script>
 </head>
-
 <body>
+<h1 class="title">Weather API</h1>
 <form id="contact-form" method="post">
-  <select id="apa">
-  <option value="906057">Stockholm</option>
-  <option value="44418">London</option>
-  <option value="638242">Berlin</option>
-  <option value="615702">Paris</option>
-  <option value="721943">Rome</option>
-  <option value="727232">Amsterdam</option>
-  <option value="766273">Madrid</option>
-</select>
-<br />
-<button type="button" onClick="submitToAPI(event)" class="btn btn-lg" style="margin-top:20px;">Submit</button>
+  <div class="control has-icons-left">
+  <div class="select is-rounded">
+    <select id="apa">
+      <option value="906057">Stockholm</option>
+      <option value="2487956">San Francisco</option>
+      <option value="44418">London</option>
+      <option value="638242">Berlin</option>
+      <option value="2295420">Bangalore</option>
+      <option value="2151330">Beijing</option>
+      <option value="615702">Paris</option>
+      <option value="721943">Rome</option>
+      <option value="727232">Amsterdam</option>
+      <option value="766273">Madrid</option>
+    </select>
+    <div class="icon is-small is-left">
+      <i class="fas fa-globe"></i>
+    </div>
+    </div>
+  </div>
+  <button class="button is-medium is-success is-rounded" type="button" onClick="submitToAPI(event)" class="btn btn-lg" style="margin-top:20px;">Submit</button>
 </form>
 
-<p id="weather"></p>
-<p id="min-temp"></p>
-<p id="max-temp"></p>
-<p id="city"></p>
+<br />
+<p id="weather"><b>Forecast: </b> </p>
+<p id="min-temp"><b>Min temp: </b></p>
+<p id="max-temp"><b>Max temp: </b></p>
+<p id="city"><b>City: </b></p>
 
+<br />
+<br />
+<br />
+<br />
+<p class="buttons">
+  <a class="button" href="https://github.com/rogerwelin/serverless-website-tutorial">
+    <span class="icon">
+      <i class="fab fa-github"></i>
+    </span>
+    <span>GitHub</span>
+  </a>
+</p>
 </body>
 </html>
