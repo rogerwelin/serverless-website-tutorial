@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import Form from './Form';
+// import Form from './Form';
+import Form2 from './Form2';
 import axios from 'axios';
 
 
@@ -24,7 +25,7 @@ class App extends Component {
     return (
       <div className="App">
         <h1 className="title">Weather API</h1>
-        <Form data={this.state.weather_data}/>
+        <Form2 data={this.state.weather_data}/>
       </div>
     );
   }
