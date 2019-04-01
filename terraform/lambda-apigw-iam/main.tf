@@ -72,6 +72,7 @@ resource "aws_lambda_function" "weather_api" {
   environment {
     variables = {
       S3BUCKET = "${var.website_bucket}"
+      REGION   = "${var.region}"
     }
   }
 }

@@ -6,7 +6,14 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"sync"
+
+	"github.com/aws/aws-sdk-go/service/s3"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
 const apiUrl = "https://www.metaweather.com/api/location/"
@@ -22,6 +29,9 @@ var (
 		"721943",
 		"727232",
 		"766273"}
+
+	S3Bucket = os.Getenv("S3BUCKET")
+	S3Region = os.Getenv("REGION")
 )
 
 type rawWeatherData struct {
@@ -105,6 +115,32 @@ func (ag *AggregatedWeather) fetchApiData(woeID string, wg *sync.WaitGroup, mu *
 	mu.Unlock()
 }
 
+func uploadToS3(fileName string) error {
+	sess := session.Must(session.NewSession(aws.NewConfig().WithRegion(S3Region)))
+	uploader := s3manager.NewUploader(sess)
+
+	file, err := os.Open(fileName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// upload to S3
+	result, err := uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(S3Bucket),
+		Key:    aws.String(fileName),
+		Body:   file,
+		ACL:    aws.String(s3.ObjectCannedACLPublicRead),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("file uploaded to, %s\n", aws.StringValue(&result.Location))
+	return nil
+}
+
 func handleRequest() error {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
@@ -116,8 +152,20 @@ func handleRequest() error {
 	}
 
 	wg.Wait()
-	re, _ := json.Marshal(ag)
+	re, err := json.Marshal(ag)
+	if err != nil {
+		return err
+	}
 	fmt.Println(string(re))
+
+	err = ioutil.WriteFile("./data.json", re, 0644)
+	if err != nil {
+		return err
+	}
+	err = uploadToS3("data.json")
+	if err != nil {
+		return err
+	}
 	return nil
 
 }
