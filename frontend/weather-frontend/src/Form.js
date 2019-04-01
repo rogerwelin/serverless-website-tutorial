@@ -1,40 +1,59 @@
 import React from 'react';
 
+class Form extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            weather_name: '',
+            min_temp: '',
+            max_temp: '',
+            city: '',
+            isSelected: false
+        };
+        this.handleChange = this.handleChange.bind(this);
+    }
 
-let form_value = '';
-let show_desc = false;
-let apa = ""
+    handleChange(event) {
+        console.log(event.target.value)
+        let [name, min_temp, max_temp, city] = event.target.value.split(';');
+        this.setState({
+            weather_name: name,
+            min_temp: parseFloat(min_temp).toFixed(1),
+            max_temp: parseFloat(max_temp).toFixed(1),
+            city: city,
+            isSelected: true
+        })
+    }
 
-function handleChange(event) {
-  form_value = event.target.value;
-};
+    renderDrawer() {
+        if (this.state.isSelected) {
+            return (
+                <div>
+                  <p><b>Forecast: </b>{this.state.weather_name}</p>
+                  <p><b>Min temp: </b>{this.state.min_temp} °C</p>
+                  <p><b>Max temp: </b>{this.state.max_temp} °C</p>
+                  <p><b>City: </b>{this.state.city}</p>
+                </div>
+            );
+        }
+      }
 
-function handleSubmit(event) {
-  show_desc = true;
-  //alert(show_desc);
-  //alert(form_value);
-}
-
-if (show_desc) {
-  apa = <p>apa</p>
-}
-
-
-const Form = (props) => {
-  // console.log(props.data)
-  return (
-    <div>
-      <form onSubmit={handleSubmit}>
-        <select value={form_value} onChange={handleChange}>
-          { props.data.map((weather, index) => {
-           return <option key={weather.woeid} value={weather.woeid}>{weather.title} </option>;
-          })}
-        </select>
-        <input type="submit" value="Submit" />
-      </form>
-    { apa }
-    </div>
-  )
+    render() {
+        return (
+          <div>
+            <form>
+              <select value={this.state.city} onChange={this.handleChange}>
+                { this.props.data.map((weather, index) => {
+                  return  <option key={weather.woeid} 
+                    value={weather.weather_state_name + ';' + weather.min_temp + ';' + weather.max_temp + ';' + weather.title}>
+                    {weather.title} </option>;
+                })}
+              </select>
+            </form>
+            {this.renderDrawer()}
+          </div>
+        );        
+    }
 }
 
 export default Form;
