@@ -68,7 +68,17 @@ resource "aws_lambda_function" "weather_api" {
   runtime = "go1.x"
 
   role = "${aws_iam_role.lambda_role.arn}"
+
+  environment {
+    variables = {
+      S3BUCKET = "${var.website_bucket}"
+    }
+  }
 }
+
+############################################
+# LAMBDA - Create cloudwatch cron trigger
+############################################
 
 resource "aws_lambda_permission" "apigw" {
   statement_id  = "AllowExecutionFromCloudWatch"

@@ -8,6 +8,11 @@ variable "artifact_bucket" {
   default     = "12345-artifact-bucket"
 }
 
+variable "website_bucket" {
+  description = "the bucket storing the static website"
+  default     = "weather-api-website1"
+}
+
 variable "artifact_zip_name" {
   description = "name of the zip file"
   default     = "faas.zip"
