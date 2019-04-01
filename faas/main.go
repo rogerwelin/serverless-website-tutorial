@@ -1,14 +1,16 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"sync"
 
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/service/s3"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -128,7 +130,7 @@ func uploadToS3(fileName string) error {
 	// upload to S3
 	result, err := uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(S3Bucket),
-		Key:    aws.String(fileName),
+		Key:    aws.String("data.json"),
 		Body:   file,
 		ACL:    aws.String(s3.ObjectCannedACLPublicRead),
 	})
@@ -137,11 +139,11 @@ func uploadToS3(fileName string) error {
 		return err
 	}
 
-	fmt.Printf("file uploaded to, %s\n", aws.StringValue(&result.Location))
+	fmt.Printf("File uploaded to: %s\n", aws.StringValue(&result.Location))
 	return nil
 }
 
-func handleRequest() error {
+func handleRequest(ctx context.Context, cloudWatchEvent events.CloudWatchEvent) error {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	ag := AggregatedWeather{}
@@ -156,13 +158,13 @@ func handleRequest() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(re))
+	// fmt.Println(string(re))
 
-	err = ioutil.WriteFile("./data.json", re, 0644)
+	err = ioutil.WriteFile("/tmp/data.json", re, 0644)
 	if err != nil {
 		return err
 	}
-	err = uploadToS3("data.json")
+	err = uploadToS3("/tmp/data.json")
 	if err != nil {
 		return err
 	}
@@ -171,8 +173,5 @@ func handleRequest() error {
 }
 
 func main() {
-	err := handleRequest()
-	if err != nil {
-		log.Fatal(err)
-	}
+	lambda.Start(handleRequest)
 }
