@@ -158,7 +158,6 @@ func handleRequest(ctx context.Context, cloudWatchEvent events.CloudWatchEvent) 
 	if err != nil {
 		return err
 	}
-	// fmt.Println(string(re))
 
 	err = ioutil.WriteFile("/tmp/data.json", re, 0644)
 	if err != nil {
