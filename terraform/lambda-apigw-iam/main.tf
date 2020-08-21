@@ -107,11 +107,11 @@ resource "aws_api_gateway_method_response" "options_200" {
   http_method = "${aws_api_gateway_method.options_method.http_method}"
   status_code = "200"
 
-  response_models {
+  response_models = {
     "application/json" = "Empty"
   }
 
-  response_parameters {
+  response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = true
     "method.response.header.Access-Control-Allow-Methods" = true
     "method.response.header.Access-Control-Allow-Origin"  = true
@@ -126,7 +126,7 @@ resource "aws_api_gateway_integration" "options_integration" {
   http_method = "${aws_api_gateway_method.options_method.http_method}"
   type        = "MOCK"
 
-  request_templates {
+  request_templates = {
     "application/json" = "{ \"statusCode\": 200 }"
   }
 
@@ -155,7 +155,7 @@ resource "aws_api_gateway_method" "proxy" {
   authorization = "NONE"
 }
 
-resource "aws_api_gateway_method_response" "200" {
+resource "aws_api_gateway_method_response" "response_200" {
   rest_api_id = "${aws_api_gateway_rest_api.weather_gw.id}"
   resource_id = "${aws_api_gateway_resource.proxy.id}"
   http_method = "${aws_api_gateway_method.proxy.http_method}"
